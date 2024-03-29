@@ -19,38 +19,19 @@ static Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 void updateAllServosAngle(CommandParameter &parameters){
 
+  for (int i = 0; i < 3; i ++)
+  {
     int ang0 = parameters.NextParameterAsInteger();
-    servo_angles[0] = ang0;
+    servo_angles[k[0] + i] = ang0;
     int ang1 = parameters.NextParameterAsInteger();
-    servo_angles[1] = ang1;
+    servo_angles[k[0] + i] = ang1;
     int ang2 = parameters.NextParameterAsInteger();
-    servo_angles[2] = ang2;
+    servo_angles[k[0] + i] = ang2;
     int ang3 = parameters.NextParameterAsInteger();
-    servo_angles[3] = ang3;
-    int ang4 = parameters.NextParameterAsInteger();
-    servo_angles[4] = ang4;
-    int ang5 = parameters.NextParameterAsInteger();
-    servo_angles[5] = ang5;
-    int ang6 = parameters.NextParameterAsInteger();
-    servo_angles[6] = ang6;
-    int ang7 = parameters.NextParameterAsInteger();
-    servo_angles[7] = ang7;
-    int ang8 = parameters.NextParameterAsInteger();
-    servo_angles[8] = ang8;
-    int ang9 = parameters.NextParameterAsInteger();
-    servo_angles[9] = ang9;
-    int ang10 = parameters.NextParameterAsInteger();
-    servo_angles[10] = ang10;
-    int ang11 = parameters.NextParameterAsInteger();
-    servo_angles[11] = ang11;
-    int ang12 = parameters.NextParameterAsInteger();
-    servo_angles[12] = ang12;
-    int ang13 = parameters.NextParameterAsInteger();
-    servo_angles[13] = ang13;
-    int ang14 = parameters.NextParameterAsInteger();
-    servo_angles[14] = ang14;
-    int ang15 = parameters.NextParameterAsInteger();
-    servo_angles[15] = ang15;
+    servo_angles[k[0] + i] = ang3;
+
+    }
+
     
 }
 

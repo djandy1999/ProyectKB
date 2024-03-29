@@ -1,4 +1,4 @@
-## Software and Control Strategies
+## BBH Software and Control Strategies
 
 The bionic hand's functionality is driven by sophisticated software whose goal is to handle input from various sources, processes data, and control the prosthetic hand's movements through a combination of virtual reality (VR) tracking and electromyography (EMG) signal processing. This section provides an overview of the control strategies and the underlying software architecture.
 

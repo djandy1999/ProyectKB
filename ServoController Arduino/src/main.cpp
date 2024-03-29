@@ -78,15 +78,9 @@ int angleToPulseinv(int ang){
 
 void setAllServosAngle(){
 {
-
-  for (int i = 0; i < 3; i ++)
+  for (int i = 0; i < 4; i ++)
   {
-    pwm.setPWM(i+k[0],0,angleToPulse(servo_angles[i]));
-  }
-  if (k == 0){
-    pwm.setPWM(3,0,angleToPulseinv(servo_angles[3]));
-  }else{
-    pwm.setPWM(3+k[0],0,angleToPulse(servo_angles[3+k[0]]));
+    pwm.setPWM(i+k[0],0,angleToPulse(servo_angles[i+k]));
   }
 }
     

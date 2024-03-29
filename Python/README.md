@@ -1,0 +1,1 @@
+In this folder the JupyterNotebooks can be found where it is shown how the Log data from a testing session recording the Electrode data and the recognized gestures is used to train the proposed CNN. The full TensorFlow 2 model is transformed to tfLite in order to be used on the Microcontroller. 

@@ -1,0 +1,3 @@
+In this code the Portenta H7 receives the electrode data, it sends it to the M4 so that it can predict the gesture based on it. It can also receive the Angles for each Joint so that the direct Hand tracking function can take place. To do this or to execute the predicted gesture on the Bionic Hand it controls the 16 Servos connected to the PCA9685 16-Channel Servo Driver.
+
+In this Folder the MegunoLink library was modified in order to make it work on the PortentaH7. This was needed to be able to connect it to Unity. Please use the libraries included on the lib folder for everything to work correctly. 

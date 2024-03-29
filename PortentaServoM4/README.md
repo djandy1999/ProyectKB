@@ -1,0 +1,3 @@
+Here the Arduino_TensorFlowLite library was used to predict the gesture based on the input coming from the High Density electrode Array. The Arduino_TensorFlowLite library is no longer being updated and the version found in the lib folder is proven to work with the code in src I created. 
+
+It is very important to note here that the model.h file is the transformation to a C-Array from the tflite model created with the code Gesture Prediction with the trained model will work only with the same kind of input it was trained with, so shape, values and everything must be kept similar from training in the acutal input sent from the M7 chip. 

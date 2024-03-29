@@ -45,7 +45,7 @@ The design incorporates 3D-printed covers for aesthetic purposes, hiding the mec
 An auxiliary 3D-printed part hosts surface electrodes, ensuring consistent data acquisition for controlling the bionic hand. These parts are integrated into a fabric mesh for ease of use and comfort during daily wear.
 
 <p align="center">
-  <img src="https://github.com/AndyDunkelHell/ProjectBBH/blob/master/Hardware/img/IMG_5951.jpg" alt="Electrodes on Forearm"/>
+  <img src="https://github.com/AndyDunkelHell/ProjectBBH/blob/master/Hardware/img/IMG_5951.JPG" alt="Electrodes on Forearm"/>
 </p>
 
 

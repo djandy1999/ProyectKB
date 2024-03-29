@@ -36,14 +36,14 @@ def connectBoard():
     global myports
     global arduino_port
     try:
-        arduinoData = serial.Serial("com6", baudrate = 250000, timeout =0.05)
+        arduinoData = serial.Serial("com3", baudrate = 250000, timeout =0.05)
     except:
         print("CONNECTION TO ARDUINO BOARD FAILED")
     else: 
         conn_bool = True
         myports = [tuple(p) for p in list(serial.tools.list_ports.comports())]
         print (myports)
-        arduino_port = [port for port in myports if 'COM6' in port ][0]
+        arduino_port = [port for port in myports if 'COM3' in port ][0]
         port_controller = threading.Thread(target=check_presence, args=(arduino_port, 0.1,))
         port_controller.setDaemon(True)
         port_controller.start()
@@ -360,7 +360,7 @@ class ThreadedTask(threading.Thread):
         self.val = set_val
 
     def run(self):
-        comm = "a"
+        comm = "!UA"
         global set_ind
         global servoVals
         global SelecServoVals
@@ -374,25 +374,20 @@ class ThreadedTask(threading.Thread):
         else:
             if serv_comb == 0:
                 k = 0
-                comm = "k" + str(k) + comm 
                 SelecServoVals = servoVals[:4]
             elif serv_comb == 1:
                 k = 4
-                comm = "k" + str(k) + comm 
                 SelecServoVals = servoVals[4:8]
             elif serv_comb == 2:
-
                 k = 8
-                comm = "k" + str(k) + comm  
                 SelecServoVals = servoVals[8:12]
             else:
                 k = 12
-                comm = "k" + str(k) + comm  
                 SelecServoVals = servoVals[12:16] 
 
             if set_ind == 67:
                 for x in range(150):
-                    arduinoData.write('c'.encode())
+                    arduinoData.write('!connect\r'.encode())
                     in_line = arduinoData.readline().decode()
                     set_ind = 0
                     if in_line != "":
@@ -405,12 +400,13 @@ class ThreadedTask(threading.Thread):
                     glob_servo2.config(state = "disabled")
                     glob_servo3.config(state = "disabled")
                     glob_servo4.config(state = "disabled")
+                    
                     try:
                         dif = int(in_line2)
                     except:
                         glob_status.config(text = "Changing Motor combination please wait. ", fg= "orange")
                         print("Changing Motor combination please wait. ",flush=True, end= "\r")
-                        k_send = 'k' + str(k)
+                        k_send = '!UK ' + str(k) + "\r"
 
                         arduinoData.write(k_send.encode())
                         set_ind = 0
@@ -428,7 +424,8 @@ class ThreadedTask(threading.Thread):
             SelecServoVals[set_ind] = set_val
             servoVals[set_ind + int(k)] = set_val  
             for x in SelecServoVals:
-                comm += "," + str(int(x))  
+                comm += " " + str(int(x))  
+            comm = comm + "\r"
             self.queue.put(comm)
 
 ## GUI ##         

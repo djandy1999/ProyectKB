@@ -9,11 +9,14 @@ For this project a modular 3D-printable bionic hand was designed, emphasizing th
 </p>
 
 
-
 ## Hardware Design
 
 ### Modular 3D-Printable Design
 The components of the bionic hand are designed for 3D printing, facilitating easy replication and assembly. The design's modularity allows for the replacement or upgrading of parts without requiring a complete rebuild. Special attention was given to the actuators' arrangement to mimic the natural movement of human joints, with a specific focus on the proximal interphalangeal (PIP) and distal interphalangeal (DIP) joints.
+
+<p align="center">
+  <img src="https://github.com/AndyDunkelHell/ProjectBBH/blob/master/Hardware/img/View1.png" alt="Frontal View Full Hand Model"/>
+</p>
 
 #### Actuators and Degrees of Freedom
 The design strategically uses servo motors to actuate one or two DOFs, optimizing the hand's functionality while minimizing its complexity. A notable feature is the coupling of the PIP and DIP joints to reduce the number of required actuators, a decision supported by their similar behavior during movement.
@@ -23,11 +26,28 @@ The design strategically uses servo motors to actuate one or two DOFs, optimizin
 - **Lateral Metacarpal (LMCP)**: Replicates the condyloid joints, allowing for the abduction and adduction movements of the metacarpophalangeal (MCP) joints.
 - **Rotating Metacarpal (RMCP)**: Specifically designed for the thumb, this structure enables semicircular movement, reflecting the saddle joint's functionality.
 
+
+<p align="center">
+  <img src="https://github.com/AndyDunkelHell/ProjectBBH/blob/master/Hardware/img/Picture1.png" alt="Frontal view all actuators with DOF"/>
+</p>
+
+
 ### Integration and Assembly
 The design incorporates 3D-printed covers for aesthetic purposes, hiding the mechanical components while ensuring the hand's realistic appearance. An assembly for mounting the actuators within the palm and forearm optimizes the prosthetic hand's form factor and structural integrity.
 
+
+<p align="center">
+  <img src="https://github.com/AndyDunkelHell/ProjectBBH/blob/master/Hardware/img/Asset%2019%404x.png" alt="Final Product executing desired grasps"/>
+</p>
+
+
 ### Control System
 An auxiliary 3D-printed part hosts surface electrodes, ensuring consistent data acquisition for controlling the bionic hand. These parts are integrated into a fabric mesh for ease of use and comfort during daily wear.
+
+<p align="center">
+  <img src="https://github.com/AndyDunkelHell/ProjectBBH/blob/master/Hardware/img/IMG_5951.jpg" alt="Electrodes on Forearm"/>
+</p>
+
 
 ## Contributing
 Contributions to this project are welcome. Please contact me for guidelines on submitting issues and pull requests.

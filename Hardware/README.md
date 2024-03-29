@@ -21,6 +21,12 @@ The components of the bionic hand are designed for 3D printing, facilitating eas
 #### Actuators and Degrees of Freedom
 The design strategically uses servo motors to actuate one or two DOFs, optimizing the hand's functionality while minimizing its complexity. A notable feature is the coupling of the PIP and DIP joints to reduce the number of required actuators, a decision supported by their similar behavior during movement.
 
+
+<p align="center">
+  <img src="https://github.com/AndyDunkelHell/ProjectBBH/blob/master/Hardware/img/Asset%206%404x.png" alt="Frontal view all actuators with DOF"/>
+</p>
+
+
 #### 3D-Printed Structures
 - **Basic Interphalangeal (BIP)**: A structure designed for the flexion and extension of interphalangeal joints, utilizing a braided polyethylene fishing line for its strength and thinness.
 - **Lateral Metacarpal (LMCP)**: Replicates the condyloid joints, allowing for the abduction and adduction movements of the metacarpophalangeal (MCP) joints.

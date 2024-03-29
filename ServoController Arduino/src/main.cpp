@@ -4,10 +4,6 @@
 #include <Adafruit_PWMServoDriver.h>
 #include "CommandHandler.h"
 
-int x;
-unsigned long last_time = 0;
-int InBytes;
-static char serial_in;
 static int servo_angles[16];
 int i = 0;
 static int k[1];

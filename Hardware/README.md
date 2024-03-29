@@ -3,7 +3,7 @@
 ## Overview
 For this project a modular 3D-printable bionic hand was designed, emphasizing the balance between structural complexity and functionality. The design achieves a high degree of dexterity by incorporating 20 degrees of freedom (DOFs) across all fingers, including the thumb, through the use of 16 actuators.
 
-
+![HandPreview](https://github.com/AndyDunkelHell/ProjectBBH/blob/master/Hardware/img/HandPreviewGIF.gif)
 
 ## Hardware Design
 

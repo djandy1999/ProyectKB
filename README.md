@@ -9,7 +9,7 @@ To accomplish the aforementioned goal this software provides two control modalit
 The control system is visualized in a comprehensive control diagram, illustrating the flow of data from input devices to the hand's actuators. The system integrates hand-tracking data from VR glasses and EMG signals from a high-density electrode array to control the hand's movements.
 
 <p align="center">
-  <img src="https://github.com/AndyDunkelHell/ProjectBBH/blob/master/Hardware/img/DIAGRAMBACHELOR.png" alt="HandPreview"/>
+  <img src="https://github.com/AndyDunkelHell/ProjectBBH/blob/master/Hardware/img/DIAGRAMBACHELOR.png" alt="Hand Preview"/>
 </p>
 
 #### Input Data Processing

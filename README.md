@@ -3,6 +3,11 @@
 The bionic hand's functionality is driven by sophisticated software whose goal is to handle input from various sources, processes data, and control the prosthetic hand's movements through a combination of virtual reality (VR) tracking and electromyography (EMG) signal processing. This section provides an overview of the control strategies and the underlying software architecture.
 
 To accomplish the aforementioned goal this software provides two control modalities: The visual control modality and the myoelectric control modality. Using hand-tracking data from virtual reality (VR) glasses the visual information serves a dual purpose. Firstly, it can be used as a direct control mechanism and secondly, it provides real-time gestural information to train a machine learning algorithm. This trained algorithm enables pattern recognition on muscle signals from a high-density surface electrode array. Thus, the primary modality, namely the myoelectric control, is achieved. A Convolutional Neural Network (CNN) was implemented to predict hand gestures accurately from the myoelectric signals. To refine the predictions different types of pre- and post-processing were implemented. 
+
+<p align="center">
+  <img src="https://github.com/AndyDunkelHell/ProjectBBH/blob/master/Hardware/img/HandEndViewGIF.gif" alt="Hand Final preview"/>
+</p>
+
  
 ### Control Strategies
 

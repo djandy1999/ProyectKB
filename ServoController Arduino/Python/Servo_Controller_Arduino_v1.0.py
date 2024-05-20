@@ -419,8 +419,7 @@ class ThreadedTask(threading.Thread):
                             self.queue.put(in_line2)
                             set_ind = 0
                             break
-            else:           
-                print(set_ind)                     
+            else:                              
                 SelecServoVals[set_ind] = set_val
                 servoVals[set_ind + int(k)] = set_val  
                 for x in SelecServoVals:

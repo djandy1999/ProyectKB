@@ -393,7 +393,7 @@ class ThreadedTask(threading.Thread):
                     if in_line != "":
                         self.queue.put(in_line)
                         break
-            if set_ind == 75:
+            elif set_ind == 75:
                 for x in range(150):
                     in_line2 = arduinoData.readline().decode()
                     glob_servo1.config(state = "disabled")
@@ -419,14 +419,14 @@ class ThreadedTask(threading.Thread):
                             self.queue.put(in_line2)
                             set_ind = 0
                             break
-                        
-
-            SelecServoVals[set_ind] = set_val
-            servoVals[set_ind + int(k)] = set_val  
-            for x in SelecServoVals:
-                comm += " " + str(int(x))  
-            comm = comm + "\r"
-            self.queue.put(comm)
+            else:           
+                print(set_ind)                     
+                SelecServoVals[set_ind] = set_val
+                servoVals[set_ind + int(k)] = set_val  
+                for x in SelecServoVals:
+                    comm += " " + str(int(x))  
+                comm = comm + "\r"
+                self.queue.put(comm)
 
 ## GUI ##         
 root = Tk()

@@ -19,18 +19,14 @@ static Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 void updateAllServosAngle(CommandParameter &parameters){
 
-  for (int i = 0; i < 3; i ++)
-  {
     int ang0 = parameters.NextParameterAsInteger();
-    servo_angles[k[0] + i] = ang0;
+    servo_angles[k[0]] = ang0;
     int ang1 = parameters.NextParameterAsInteger();
-    servo_angles[k[0] + i] = ang1;
+    servo_angles[k[0] + 1] = ang1;
     int ang2 = parameters.NextParameterAsInteger();
-    servo_angles[k[0] + i] = ang2;
+    servo_angles[k[0] + 2] = ang2;
     int ang3 = parameters.NextParameterAsInteger();
-    servo_angles[k[0] + i] = ang3;
-
-    }
+    servo_angles[k[0] + 3] = ang3;
 
     
 }
@@ -80,7 +76,7 @@ void setAllServosAngle(){
 {
   for (int i = 0; i < 4; i ++)
   {
-    pwm.setPWM(i+k[0],0,angleToPulse(servo_angles[i+k]));
+    pwm.setPWM(i+k[0],0,angleToPulse(servo_angles[i+k[0]]));
   }
 }
     

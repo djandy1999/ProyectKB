@@ -80,6 +80,7 @@ class GUI:
         self.sliders.grid(row=1, column= 1, columnspan=3, pady=10)
         self.test_servo.grid(row=2, column= 0, columnspan=3,  sticky=W+E)
         
+        self.min_grad = 110
         self.max_grad = 190
         self.selec = 0
         #TO DO: When Changing Combination restore the Angle vals
@@ -113,13 +114,13 @@ class GUI:
         #SCALE
         
         self.current_val1 = DoubleVar()
-        self.servo1 = Scale(self.sliders, from_= 0, to=self.max_grad, command=self.getScale1,variable= self.current_val1, repeatdelay=500)
+        self.servo1 = Scale(self.sliders, from_= self.min_grad, to=self.max_grad, command=self.getScale1,variable= self.current_val1, repeatdelay=500)
         self.current_val2 = DoubleVar()
-        self.servo2 = Scale(self.sliders, from_= 0, to=self.max_grad, command=self.getScale2,variable= self.current_val2, repeatdelay=500)
+        self.servo2 = Scale(self.sliders, from_= self.min_grad, to=self.max_grad, command=self.getScale2,variable= self.current_val2, repeatdelay=500)
         self.current_val3 = DoubleVar()
-        self.servo3 = Scale(self.sliders, from_= 0, to=self.max_grad, command=self.getScale3,variable= self.current_val3, repeatdelay=500)
+        self.servo3 = Scale(self.sliders, from_= self.min_grad, to=self.max_grad, command=self.getScale3,variable= self.current_val3, repeatdelay=500)
         self.current_val4 = DoubleVar()
-        self.servo4 = Scale(self.sliders, from_= 0, to=self.max_grad, command=self.getScale4,variable= self.current_val4, repeatdelay=500)
+        self.servo4 = Scale(self.sliders, from_= self.min_grad, to=self.max_grad, command=self.getScale4,variable= self.current_val4, repeatdelay=500)
 
         global glob_servo1 
         glob_servo1 = self.servo1

@@ -36,7 +36,7 @@ def connectBoard():
     global myports
     global arduino_port
     try:
-        arduinoData = serial.Serial("com4", baudrate = 250000, timeout =0.05)
+        arduinoData = serial.Serial("com3", baudrate = 250000, timeout =0.05)
     except:
         print("CONNECTION TO ARDUINO BOARD FAILED")
     else: 

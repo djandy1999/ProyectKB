@@ -1,11 +1,56 @@
 #include "IntanShield.h"
 
 /* Select which amplifier(s) should be turned on. FirstChannelPwr corresponds to Phone Jack 1, and SecondChannelPwr corresponds to Phone Jack 2. Each channel's power should only be defined once (i.e. true OR false, never true AND false) */
+/* Select which amplifier(s) should be turned on. FirstChannelPwr corresponds to Phone Jack 1, and SecondChannelPwr corresponds to Phone Jack 2. Each channel's power should only be defined once (i.e. true OR false, never true AND false) */
+
+
+// Define the number of channels to sample
+#define NUM_CHANNELS 12
+
+bool pwrBools[NUM_CHANNELS] = {true, true, true, true, true, true, true, true, true, true, true, true};
+const uint8_t  channels[NUM_CHANNELS] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+
+/* Select which amplifier(s) should be turned on. FirstChannelPwr corresponds to Phone Jack 1, and SecondChannelPwr corresponds to Phone Jack 2. Each channel's power should only be defined once (i.e. true OR false, never true AND false) */
 bool FirstChannelPwr = true;
 //bool FirstChannelPwr = false;
 
- bool SecondChannelPwr = true;
-//bool SecondChannelPwr = false;
+//bool SecondChannelPwr = true;
+bool SecondChannelPwr = true;
+
+// Define power for additional channels
+bool ThirdChannelPwr = true;
+//bool ThirdChannelPwr = false;
+
+bool FourthChannelPwr = true;
+//bool FourthChannelPwr = false;
+
+bool FifthChannelPwr = true;
+//bool FifthChannelPwr = false;
+
+bool SixthChannelPwr = true;
+//bool SixthChannelPwr = false;
+
+bool SeventhChannelPwr = true;
+//bool SeventhChannelPwr = false;
+
+bool EighthChannelPwr = true;
+//bool EighthChannelPwr = false;
+
+bool NinthChannelPwr = true;
+//bool NinthChannelPwr = false;
+
+bool TenthChannelPwr = true;
+//bool TenthChannelPwr = false;
+
+bool EleventhChannelPwr = true;
+//bool EleventhChannelPwr = false;
+
+bool TwelfthChannelPwr = true;
+//bool TwelfthChannelPwr = false;
+
+// Buffer to store sampled data
+int16_t channel_data_buffer[NUM_CHANNELS];
+
 
 String serialout = ""; //string to send through the Serial output
 
@@ -260,18 +305,23 @@ void setup() {
   SendWriteCommand(17, 0);
 
   //Turning individual amplifiers that we wish to use on
-  SetAmpPwr(FirstChannelPwr, SecondChannelPwr);
+  SetAmpPwr(FirstChannelPwr, SecondChannelPwr, ThirdChannelPwr, FourthChannelPwr, FifthChannelPwr, SixthChannelPwr, SeventhChannelPwr, EighthChannelPwr, NinthChannelPwr, TenthChannelPwr, EleventhChannelPwr, TwelfthChannelPwr);
   
   //Initiate ADC self-calibration routine that should be performed after chip power-up and register configuration
   Calibrate();
 
   //Send convert command with LSB set to 1, which resets the output of the digital high-pass filter associated with the channel to zero
-  SendConvertCommandH(FIRSTCHANNEL);
-  SendConvertCommandH(SECONDCHANNEL);
+  for (int i = 0; i < NUM_CHANNELS; i++) {
+    SendConvertCommandH(channels[i]);
+  }
+
 
   //Send convert commands to channels 0 and 15, so that when we enter the loop the results are immediately available
-  SendConvertCommand(FIRSTCHANNEL);
-  SendConvertCommand(SECONDCHANNEL);
+
+  for (int i = 0; i < NUM_CHANNELS; i++) {
+    SendConvertCommand(channels[i]);
+  }
+
 
   //Optional - monitor how much of the CPU is being used per interrupt cycle by monitoring the duty cycle from pin 2
   pinMode(2, OUTPUT);
@@ -328,118 +378,15 @@ void loop() {
    *  For sending 2 channels' accumulator data to the DAC (average_energy_mode = true), last 2 bits of TWSR = 11 (prescaler = 64), and TWBR = 40
    */
 
-  if (digitalRead(15) == HIGH) {
-    //Pin 15 controls average_energy_mode. When enabled, the DAC outputs the accumulated energy per 20 ms rather than the raw data per 1 ms
-    average_energy_mode = true;
-    //Set Arduino's TWI (I2C) registers to a rate that gives 20 ms per sample
-    TWSR = TWSR | 0b11;
-    TWBR = 40;
-  }
 
-  else {
     //When average_energy_mode is disabled, the DAC outputs the raw channel data sample by sample every 1 ms
     average_energy_mode = false;
     //Set Arduino's TWI (I2C) registers to a rate that gives 1 ms per sample
     TWSR = TWSR & 0b11111100;
     TWBR = 30;
-  } 
+  
 
   /* when average_energy_mode is enabled, loop should execute every 20 ms. When it is not enabled, loop should execute every 1 ms */
-
-  if (average_energy_mode == true) {
-
-    /* output the average energy over 20 ms through the DAC and Serial comunication */
-
-    //Read threshold from the Arduino's ADC, scale the value to units of microVolts, and divide by 20 to correspond to an average over 20 samples
-    int threshold = (int) (0.195 * ReadThreshold() / 20);
-
-    if (LowGainMode())
-      //Set up the Serial output string to include constants close to the signal value for which the DAC output will saturate. As long as signal is within these boundaries (measured in microVolts), keeps Serial Plotter from autoscaling
-      serialconstants = ",4400,0"; //With low-gain-mode active, non-clipped raw data can range from 0 to 4.4 mV peak-to-peak. Note: this constant line will NOT correlate with the output of the accumulator, which is non-linear and depends not only on the highest value of the signal but also on the proportion of time it spends at that level
-    else
-      serialconstants = ",1100,0"; //With low-gain-mode inactive, non-clipped average data can range from 0 to 1.1 mV peak-to-peak. Note: this constant line will NOT correlate with the output of the accumulator, which is non-linear and depends not only on the highest value of the signal but also on the proportion of time it spends at that level
-
-    //Add a String to serialconstants representing the current threshold set by the user-controlled slide potentiometer, allowing its value to be visible on the Serial Plotter
-    serialconstants = serialconstants + "," + (String) threshold;
-    
-    //Temporarily disable interrupts and quickly grab raw 16-bit data from global variables in the .cpp file
-    cli();
-    rawdata = ReadAccumulatorData(FIRSTCHANNEL);
-    sei();
-
-    //Ensure data is 0 if amplifier is powered off
-    if (!FirstChannelPwr)
-      rawdata = 0;
-
-    //Convert rawdata from a sum of 20 cycles to an average over 20 cycles
-    rawdata = rawdata / 20;
-
-    //Scale for serial - display in microVolts (multiply by LSB of ADC, 0.195 microVolts)
-    serialdata1 = (int) (rawdata * 0.195);
-
-    //Convert raw 16-bit data to 8-bit data to send to the DAC
-    data = ScaleForDAC_ACC(rawdata);
-      
-    //Divide up the data over 2 bytes to send to the DAC - see "I2C Interface (TWI)" for the format to send data
-    d1 = 0b00000000;
-    d2 = 0b00000000;
-    d1 = d1 | (data >> 4);
-    d2 = d2 | (data << 4);
-    
-    //Transmit to DAC IC - device 56 -- 0b0111000
-    Wire.beginTransmission(56);
-  
-    //Write command/data byte: tells DAC that digital output data should go to DAC0, and the 4 MSBs of the data
-    Wire.write(uint8_t(d1));
-    //Write second data byte: tells the 4 LSBs of the data
-    Wire.write(uint8_t(d2));
-    Wire.endTransmission();
- 
-    //Temporarily disable interrupts and quickly grab raw 16-bit data from global variables in the .cpp file
-    cli();
-    rawdata = ReadAccumulatorData(SECONDCHANNEL);
-    sei();
-
-    //Ensure data is 0 if amplifier is powered off
-    if (!SecondChannelPwr)
-      rawdata = 0;
-    
-    //Convert rawdata from a sum of 20 cycles to an average over 20 cycles
-    rawdata = rawdata / 20;
-
-    //Scale for serial - display in microVolts (multiply by LSB of ADC, 0.195 microVolts)
-    serialdata2 = (int) (rawdata * 0.195);
-
-    //Concatenate the two channels of serial data into a single string (comma-delimited)
-    //Add constants to an additional 2 channels, so the user can see the signal levels at which the DAC output will saturate, as well as the current thresold value
-    serialout = serialout + String(serialdata1) + "," + String(serialdata2) + serialconstants;
-    
-    //Send the output string to Serial
-    Serial.println(serialout);
-
-    //Clear the serial data string to prepare for the next iteration
-    serialout = "";
-
-    //Convert raw 16-bit data to 8-bit data to send to the DAC
-    data = ScaleForDAC_ACC(rawdata);
-
-    //Divide up the data over 2 bytes to send to the DAC - see "I2C Interface (TWI)" for the format to send data
-    d1 = 0b00010000;
-    d2 = 0b00000000;
-    d1 = d1 | (data >> 4);
-    d2 = d2 | (data << 4);
-  
-    //Transmit to DAC IC - device 56 -- 0b0111000
-    Wire.beginTransmission(56);
-  
-    //Write command/data byte: tells DAC that digital output data should go to DAC0, and the 4 MSBs of the data
-    Wire.write(uint8_t(d1));
-    //Write second data byte: tells the 4 LSBs of the data
-    Wire.write(uint8_t(d2));
-    Wire.endTransmission();   
-  }
-
-  else {
     
     /* output the channel data sample by sample every 1 ms through the DAC and Serial comunication */
  
@@ -448,14 +395,15 @@ void loop() {
       serialconstants = ",2200,-2200"; //With low-gain-mode active, non-clipped average data can range from +- 2.2 mV (4.4 mV peak-to-peak)
     else
       serialconstants = ",550,-550"; //With low-gain-mode inactive, non-clipped average data can range from +-0.55 mV (1.1 mV peak-to-peak)
+  for (int i = 0; i < NUM_CHANNELS; i++) {
 
     //Temporarily disable interrupts and quickly grab raw 16-bit data from global variables in the .cpp file
     cli();
-    rawdata = ReadChannelData(FIRSTCHANNEL); //Read FirstChannel's data for one sample
+    rawdata = ReadChannelData(channels[i]); //Read FirstChannel's data for one sample
     sei();
 
     //Ensure data is 0 if amplifier is powered off
-    if (!FirstChannelPwr)
+    if (!pwrBools[i])
       rawdata = 0;
 
     //Scale for serial - display in microVolts (multiply by LSB of ADC, 0.195 microVolts)
@@ -480,42 +428,26 @@ void loop() {
     Wire.endTransmission();
     //Temporarily disable interrupts and quickly grab raw 16-bit data from global variables in the .cpp file
     cli();
-    rawdata = ReadChannelData(SECONDCHANNEL); //Read SecondChannel's data for one sample
+    rawdata = ReadChannelData(channels[i+1]); //Read SecondChannel's data for one sample
     sei();
 
     //Ensure data is 0 if amplifier is powered off
-    if (!SecondChannelPwr)
+    if (!pwrBools[i+1])
       rawdata = 0;
  
     //Scale for serial - display in microVolts (multiply by LSB of ADC, 0.195 microVolts)
     serialdata2 = (int) (rawdata * 0.195);
     //Serial.println((String) serialdata1 + "," + (String) serialdata2);
-
-    //Concatenate the two channels of serial data into a single string (comma-delimited)
-    //Add constants to an additional 2 channels, so the user can see the signal levels at which the DAC output will saturate
-    serialout = serialout + String(serialdata1) + "," + String(serialdata2) + serialconstants;
-
-    //Send the output string to Serial
-    Serial.println(serialout);
-    
-    //Clear the serial data string to prepare for the next iteration
-    serialout = "";
-
-    //Convert raw 16-bit data to 8-bit data to send to the DAC
-    data = ScaleForDAC(rawdata);
-    
-    //Divide up the data over 2 bytes to send to the DAC - see "I2C Interface (TWI)" for the format to send data
-    d1 = 0b00010000;
-    d2 = 0b00000000;
-    d1 = d1 | (data >> 4);
-    d2 = d2 | (data << 4);
-    //Transmit to DAC IC - device 56 -- 0b0111000
-    Wire.beginTransmission(56);
+    channel_data_buffer[i] = serialdata1;
+    channel_data_buffer[i + 1] = serialdata2;
+    }
+    // Send the buffer data via Serial
+    for (int i = 0; i < NUM_CHANNELS; i++) {
+      Serial.print(channel_data_buffer[i]);
+      if (i < NUM_CHANNELS - 1) {
+        Serial.print(",");
+      }
+    }
+    Serial.println();
   
-    //Write command/data byte: tells DAC that digital output data should go to DAC0, and the 4 MSBs of the data
-    Wire.write(uint8_t(d1));
-    //Write second data byte: tells the 4 LSBs of the data
-    Wire.write(uint8_t(d2));
-    Wire.endTransmission();
-  }
 }

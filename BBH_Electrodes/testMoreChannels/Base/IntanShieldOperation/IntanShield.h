@@ -31,6 +31,6 @@ long ReadThreshold();
 const int chipSelectPin = 10;
 const byte PS_128 = (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
 const byte PS_16 = (1 << ADPS2);
-#define FIRSTCHANNEL 10
-#define SECONDCHANNEL 11
+#define FIRSTCHANNEL 0
+#define SECONDCHANNEL 1
 #define DAC_SCALE_COEFFICIENT 12

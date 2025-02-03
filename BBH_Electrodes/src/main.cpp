@@ -1,30 +1,37 @@
 #include "IntanShield.h"
+#include "CommandHandler.h"
 
 /* Select which amplifier(s) should be turned on. FirstChannelPwr corresponds to Phone Jack 1, and SecondChannelPwr corresponds to Phone Jack 2. Each channel's power should only be defined once (i.e. true OR false, never true AND false) */
-/* Select which amplifier(s) should be turned on. FirstChannelPwr corresponds to Phone Jack 1, and SecondChannelPwr corresponds to Phone Jack 2. Each channel's power should only be defined once (i.e. true OR false, never true AND false) */
+bool FirstChannelPwr = true;
+//bool FirstChannelPwr = false;
 
+bool SecondChannelPwr = true;
+//bool SecondChannelPwr = false;
 
-// Define the number of channels to sample
+bool ThirdChannelPwr = true;
+//bool ThirdChannelPwr = false;
 
+bool FourthChannelPwr = true;
+//bool FourthChannelPwr = false;
 
-bool pwrBools[NUM_CHANNELS] = {true, true, true, true, true, true, true, true, true, true, true, true};
-const uint8_t  channels[NUM_CHANNELS] = {FIRSTCHANNEL, SECONDCHANNEL, THIRDCHANNEL, FOURTHCHANNEL, FIFTHCHANNEL, SIXTHCHANNEL, SEVENTHCHANNEL, EIGHTHCHANNEL, NINTHCHANNEL, TENTHCHANNEL, ELEVENTHCHANNEL, TWELFTHCHANNEL};
+bool FifthChannelPwr = true;
+//bool FifthChannelPwr = false;
 
-// Buffer to store sampled data
-int16_t channel_data_buffer[NUM_CHANNELS];
-static int j[1];
+bool SixthChannelPwr = true;
+//bool SixthChannelPwr = false;0
+
+bool SeventhChannelPwr = true;
+//bool SeventhChannelPwr = false;
+
+bool EigthChannelPwr = true;
+//bool EigthChannelPwr = false;
+CommandHandler<10, 60, 15> SerialCommandHandler;
 
 String serialout = ""; //string to send through the Serial output
 
 String serialconstants = ""; //constants to concatenate with String serialout to control auto-scaling of Serial Plotter
 
-#define ISR_RATE 6000 //Interrupt rate in Hz. With the default 2 channel sample setting, each channel is sampled at 1 kHz. Before changing, see notes in .cpp file of library
-
-// #define N_CHANNELS    12        // total amplifier channels read
-// #define CH_PER_ISR    2         // how many channels we read each interrupt
-// #define CHANNEL_RATE  1000      // each channel's desired sample rate in Hz
-// #define TOTAL_RATE    (N_CHANNELS * CHANNEL_RATE) // total samples/sec
-// #define INTERRUPT_RATE (TOTAL_RATE / CH_PER_ISR)  // interrupts/sec
+#define INTERRUPT_RATE 8000 //Interrupt rate in Hz. With the default 2 channel sample setting, each channel is sampled at 1 kHz. Before changing, see notes in .cpp file of library
 
 /* Set configuration settings using the DIP switch. 5 settings to configure:
  *  1) audio_enable: enable/disable (Digital Pin 6) - determines if sounds are played through speaker when a pulse has been detected from a channel. When enabled, volume can be changed through rotary potentiomter.
@@ -34,23 +41,39 @@ String serialconstants = ""; //constants to concatenate with String serialout to
  *  5) notch_setting: 60 Hz / 50 Hz (Analog Pin 3, aka Digital Pin 17) - determines the frequency of the notch filter (60 Hz or 50 Hz depending on the power mains frequency of the country)
  */
 
-bool average_energy_mode; //variable that determines if the DAC and Serial communication output the accumulated energy per 20 ms, or raw channel data per 1 ms.
-
-uint8_t data; //variable that holds the 8-bit data to be sent to the DAC
-
 long rawdata; //variable that holds the raw 16-bit data from the RHD2216 chip
 
 int serialdata1; //variable that holds the int data of the first channel to send over Serial
 
 int serialdata2; //variable that holds the int data of the second channel to send over Serial
 
-uint8_t d1; //variable that holds the first data segment to be sent to the DAC
+int serialdata3; //variable that holds the int data of the second channel to send over Serial
 
-uint8_t d2; //variable that holds the second data segment to be sent to the DAC
+int serialdata4; //variable that holds the int data of the second channel to send over Serial
 
+int serialdata5; //variable that holds the int data of the first channel to send over Serial
+
+int serialdata6; //variable that holds the int data of the second channel to send over Serial
+
+int serialdata7; //variable that holds the int data of the second channel to send over Serial
+
+int serialdata8; //variable that holds the int data of the second channel to send over Serial
+
+bool conn_bool = true;
 /* Select the lower cutoff of the bandwidth */
 enum Bandselect { LowCutoff10Hz, LowCutoff1Hz, LowCutoff100mHz };
 Bandselect band_setting; // band_setting has 3 possible values, corresponding to a low cutoff frequency of 10 Hz, 1 Hz, or 0.1 Hz
+
+void BBHIdentity(CommandParameter &parameters){
+  conn_bool = true;
+  Serial.println(F("Electrode_Board \r")); 
+  }
+
+void Disconn(CommandParameter &parameters){
+  conn_bool = false;
+  Serial.println(F("Succesfully Disconected")); 
+  Serial.end();
+}
 
 void setup() {
   SPI.begin(); //Initialize SPI bus
@@ -62,6 +85,8 @@ void setup() {
   pinMode(6, INPUT);  //Digital 6 input, controls audio_enable; if LOW, audio is disabled
   pinMode(7, INPUT);  //Digital 7 input, controls low_gain_mode; if HIGH, channel data is scaled down to allow for larger signals
   
+  SerialCommandHandler.AddCommand(F("identity"), BBHIdentity);
+  SerialCommandHandler.AddCommand(F("DC"), Disconn);
 
   /* Set digital pins 4-5 to be outputs corresponding to whether or not channels FIRSTCHANNEL or SECONDCHANNEL are sensing a strong signal */
   pinMode(4, OUTPUT);
@@ -273,30 +298,44 @@ void setup() {
   SendWriteCommand(17, 0);
 
   //Turning individual amplifiers that we wish to use on
-  SetAmpPwr(pwrBools[0], pwrBools[1], pwrBools[2], pwrBools[3], pwrBools[4], pwrBools[5], pwrBools[6], pwrBools[7], pwrBools[8], pwrBools[9], pwrBools[10], pwrBools[11]);
+  SetAmpPwr(FirstChannelPwr, SecondChannelPwr, ThirdChannelPwr,FourthChannelPwr,FifthChannelPwr, SixthChannelPwr, SeventhChannelPwr,EigthChannelPwr);
   
   //Initiate ADC self-calibration routine that should be performed after chip power-up and register configuration
   Calibrate();
 
-  // //Send convert command with LSB set to 1, which resets the output of the digital high-pass filter associated with the channel to zero
-  // for (int i = 0; i < NUM_CHANNELS; i++) {
-  //   SendConvertCommandH(channels[i]);
-  // }
-  // //Send convert command with LSB set to 1, which resets the output of the digital high-pass filter associated with the channel to zero
-  // SendConvertCommandH(FIRSTCHANNEL);
-  // SendConvertCommandH(SECONDCHANNEL);
+  //Send convert command with LSB set to 1, which resets the output of the digital high-pass filter associated with the channel to zero
+  SendConvertCommandH(FIRSTCHANNEL);
+  SendConvertCommandH(SECONDCHANNEL);
+  SendConvertCommandH(THIRDCHANNEL);
+  SendConvertCommandH(FOURTHCHANNEL);
+  SendConvertCommandH(FIFTHCHANNEL);
+  SendConvertCommandH(SIXTHCHANNEL);
+  SendConvertCommandH(SEVENTHCHANNEL);
+  SendConvertCommandH(EIGTHCHANNEL);
+
+
 
   //Send convert commands to channels 0 and 15, so that when we enter the loop the results are immediately available
-
-  for (int i = 0; i < NUM_CHANNELS; i++) {
-    SendConvertCommand(channels[i]);
-  }
+  SendConvertCommand(FIRSTCHANNEL);
+  SendConvertCommand(SECONDCHANNEL);
 
   //Optional - monitor how much of the CPU is being used per interrupt cycle by monitoring the duty cycle from pin 2
   pinMode(2, OUTPUT);
 
+  //Initialize the I2C interface between the Arduino and the DAC
+  Wire.begin();
+
+  //Power on DAC
+  Wire.beginTransmission(56);
+  Wire.write(0b11110000);
+  Wire.write(0b00001100);
+  Wire.endTransmission();
+
   //Monitoring CPU usage - set pin 2 low, it will be set high at the beginning of each interrupt cycle
   digitalWrite(2, LOW);
+
+  //Setting ADC to refer voltages to an external value (3.3 V)
+  analogReference(EXTERNAL);
 
   /* Set up Timer 1 to send an interrupt every 1/2000th of a second */
 
@@ -306,44 +345,26 @@ void setup() {
   //Turn interrupts off while we configure our interrupts - don't want them going off until everything is set up properly
   cli();
 
-  // //Clear Timer on Compare Match
-  // TCCR1B = (TCCR1B & ~_BV(WGM13)) | _BV(WGM12);
-  // TCCR1A = TCCR1A & ~(_BV(WGM11) | _BV(WGM10));
+  //Clear Timer on Compare Match
+  TCCR1B = (TCCR1B & ~_BV(WGM13)) | _BV(WGM12);
+  TCCR1A = TCCR1A & ~(_BV(WGM11) | _BV(WGM10));
   
-  // //No prescaler
-  // TCCR1B = (TCCR1B & ~(_BV(CS12) | _BV(CS11))) | _BV(CS10);
+  //No prescaler
+  TCCR1B = (TCCR1B & ~(_BV(CS12) | _BV(CS11))) | _BV(CS10);
   
-  // //Set the compare register (OCR1A)
-  // OCR1A = F_CPU / INTERRUPT_RATE;    // 16e6 / 2000 = 8000
+  //Set the compare register (OCR1A)
+  OCR1A = F_CPU / INTERRUPT_RATE;    // 16e6 / 2000 = 8000
 
-  // //Enable interrupt when TCNT1 == OCR1A
-  // TIMSK1 |= _BV(OCIE1A);
-  TCCR1A = 0;
-  TCCR1B = 0;
+  //Enable interrupt when TCNT1 == OCR1A
+  TIMSK1 |= _BV(OCIE1A);
 
-  // CTC Mode
-  TCCR1B |= (1 << WGM12);
-
-  // *** Prescaler = 8 ***
-  //  Bits CS12:CS11:CS10 => 010 => /8
-  //  Reference: Table 17-6 in ATmega328 datasheet
-  TCCR1B |= (1 << CS11);   // sets prescaler=8
-
-  // Timer clock = 16 MHz / 8 = 2 MHz
-  // OCR1A = TimerClock / ISR_RATE
-  uint32_t timerClock = F_CPU / 8;         // = 2,000,000
-  uint32_t compareVal = timerClock / ISR_RATE; // e.g. 2e6 / 6000 ~ 333
-  OCR1A = (uint16_t)(compareVal);
-
-  // Enable compare interrupt
-  TIMSK1 |= (1 << OCIE1A);
-
+  //Turn interrupts back on
   sei();
 }
 
 void loop() {
   /* Every loop iteration, update Arduino registers and variable average_energy_mode in case user has switched modes during operation */
-
+  
   /*  average energy mode - alters I2C speed and the data sent through the interface to the DAC
    *  I2C Frequency Select - Data sent to the DAC should match sampling frequency as close as possible
    *  Controlled by value in register TWBR, given by equation SCLfreq = (CPUclockfreq)/(16 + 2*TWBR*PrescalerValue)
@@ -352,51 +373,122 @@ void loop() {
    *  For sending 2 channels' raw data to the DAC (average_energy_mode = false), last 2 bits of TWSR = 00 (prescaler = 1), and TWBR = 60
    *  For sending 2 channels' accumulator data to the DAC (average_energy_mode = true), last 2 bits of TWSR = 11 (prescaler = 64), and TWBR = 40
    */
-    /* when average_energy_mode is enabled, loop should execute every 20 ms. When it is not enabled, loop should execute every 1 ms */
-    
+    //Set Arduino's TWI (I2C) registers to a rate that gives 1 ms per sample
+    TWSR = TWSR & 0b11111100;
+    TWBR = 30;  
     /* output the channel data sample by sample every 1 ms through the DAC and Serial comunication */
- 
-    if (LowGainMode())
-      //Set up the serial output string to include constants close to the signal value for which the DAC output will saturate. As long as signal is within these boundaries (measured in microVolts), keeps Serial Plotter from autoscaling
-      serialconstants = ",2200,-2200"; //With low-gain-mode active, non-clipped average data can range from +- 2.2 mV (4.4 mV peak-to-peak)
-    else
-      serialconstants = ",550,-550"; //With low-gain-mode inactive, non-clipped average data can range from +-0.55 mV (1.1 mV peak-to-peak)
-    //Temporarily disable interrupts and quickly grab raw 16-bit data from global variables in the .cpp file
-    cli();
-    rawdata = ReadChannelData(channels[j[0]]); //Read FirstChannel's data for one sample
-    sei();
+    serialconstants = "\r"; //With low-gain-mode inactive, non-clipped average data can range from +-0.55 mV (1.1 mV peak-to-peak)
+    if (conn_bool == true){
+      //Temporarily disable interrupts and quickly grab raw 16-bit data from global variables in the .cpp file
+      cli();
+      rawdata = ReadChannelData(FIRSTCHANNEL); //Read FirstChannel's data for one sample
+      sei();
 
-    //Ensure data is 0 if amplifier is powered off
-    if (!pwrBools[j[0]])
-      rawdata = 0;
+      //Ensure data is 0 if amplifier is powered off
+      if (!FirstChannelPwr)
+        rawdata = 0;
 
-    //Scale for serial - display in microVolts (multiply by LSB of ADC, 0.195 microVolts)
-    serialdata1 = (int) (rawdata * 0.195);
+      //Scale for serial - display in microVolts (multiply by LSB of ADC, 0.195 microVolts)
+      serialdata1 = (int) (rawdata * 0.195);
+      
+      //Temporarily disable interrupts and quickly grab raw 16-bit data from global variables in the .cpp file
+      cli();
+      rawdata = ReadChannelData(SECONDCHANNEL); //Read SecondChannel's data for one sample
+      sei();
 
-    //Temporarily disable interrupts and quickly grab raw 16-bit data from global variables in the .cpp file
-    cli();
-    rawdata = ReadChannelData(channels[j[0] +1]); //Read SecondChannel's data for one sample
-    sei();
-
-    //Ensure data is 0 if amplifier is powered off
-    if (!pwrBools[j[0] + 1])
-      rawdata = 0;
- 
-    //Scale for serial - display in microVolts (multiply by LSB of ADC, 0.195 microVolts)
-    serialdata2 = (int) (rawdata * 0.195);
-    //Serial.println((String) serialdata1 + "," + (String) serialdata2);
-    channel_data_buffer[j[0]] = serialdata1;
-    channel_data_buffer[j[0] + 1] = serialdata2;
-    
-    // Serial.print((String) serialdata1 + "," + (String) serialdata2 + ","  );
-    if (j[0] >= NUM_CHANNELS) {
-      Serial.println((String) channel_data_buffer[0] + "," + (String) channel_data_buffer[1] + "," + (String) channel_data_buffer[2] + "," + (String) channel_data_buffer[3] + "," + (String) channel_data_buffer[4] + "," + (String) channel_data_buffer[5] + "," + (String) channel_data_buffer[6] + "," + (String) channel_data_buffer[7] + "," + (String) channel_data_buffer[8] + "," + (String) channel_data_buffer[9] + "," + (String) channel_data_buffer[10] + "," + (String) channel_data_buffer[11] + serialconstants);
-      j[0] = 0;
-    }else{
-      j[0] += 2;
-    }
-
-    
-}
-
+      //Ensure data is 0 if amplifier is powered off
+      if (!SecondChannelPwr)
+        rawdata = 0;
   
+      //Scale for serial - display in microVolts (multiply by LSB of ADC, 0.195 microVolts)
+      serialdata2 = (int) (rawdata * 0.195);
+      //Serial.println((String) serialdata1 + "," + (String) serialdata2);
+
+      //Temporarily disable interrupts and quickly grab raw 16-bit data from global variables in the .cpp file
+      cli();
+      rawdata = ReadChannelData(THIRDCHANNEL); //Read SecondChannel's data for one sample
+      sei();
+
+      //Ensure data is 0 if amplifier is powered off
+      if (!ThirdChannelPwr)
+        rawdata = 0;
+  
+      //Scale for serial - display in microVolts (multiply by LSB of ADC, 0.195 microVolts)
+      serialdata3 = (int) (rawdata * 0.195);
+      //Serial.println((String) serialdata1 + "," + (String) serialdata2);
+
+      //Temporarily disable interrupts and quickly grab raw 16-bit data from global variables in the .cpp file
+      cli();
+      rawdata = ReadChannelData(FOURTHCHANNEL); //Read SecondChannel's data for one sample
+      sei();
+
+      //Ensure data is 0 if amplifier is powered off
+      if (!FourthChannelPwr)
+        rawdata = 0;
+  
+      //Scale for serial - display in microVolts (multiply by LSB of ADC, 0.195 microVolts)
+      serialdata4 = (int) (rawdata * 0.195);
+
+      //Temporarily disable interrupts and quickly grab raw 16-bit data from global variables in the .cpp file
+      cli();
+      rawdata = ReadChannelData(FIFTHCHANNEL); //Read SecondChannel's data for one sample
+      sei();
+
+      //Ensure data is 0 if amplifier is powered off
+      if (!FifthChannelPwr)
+        rawdata = 0;
+  
+      //Scale for serial - display in microVolts (multiply by LSB of ADC, 0.195 microVolts)
+      serialdata5 = (int) (rawdata * 0.195);
+
+      //Temporarily disable interrupts and quickly grab raw 16-bit data from global variables in the .cpp file
+      cli();
+      rawdata = ReadChannelData(SIXTHCHANNEL); //Read SecondChannel's data for one sample
+      sei();
+
+      //Ensure data is 0 if amplifier is powered off
+      if (!SixthChannelPwr)
+        rawdata = 0;
+  
+      //Scale for serial - display in microVolts (multiply by LSB of ADC, 0.195 microVolts)
+      serialdata6 = (int) (rawdata * 0.195);
+
+
+      //Temporarily disable interrupts and quickly grab raw 16-bit data from global variables in the .cpp file
+      cli();
+      rawdata = ReadChannelData(SEVENTHCHANNEL); //Read SecondChannel's data for one sample
+      sei();
+
+      //Ensure data is 0 if amplifier is powered off
+      if (!SeventhChannelPwr)
+        rawdata = 0;
+  
+      //Scale for serial - display in microVolts (multiply by LSB of ADC, 0.195 microVolts)
+      serialdata7 = (int) (rawdata * 0.195);
+
+      //Temporarily disable interrupts and quickly grab raw 16-bit data from global variables in the .cpp file
+      cli();
+      rawdata = ReadChannelData(EIGTHCHANNEL); //Read SecondChannel's data for one sample
+      sei();
+
+      //Ensure data is 0 if amplifier is powered off
+      if (!EigthChannelPwr)
+        rawdata = 0;
+  
+      //Scale for serial - display in microVolts (multiply by LSB of ADC, 0.195 microVolts)
+      serialdata8 = (int) (rawdata * 0.195);
+
+      //Serial.println((String) serialdata1 + "," + (String) serialdata2);
+      //Concatenate the two channels of serial data into a single string (comma-delimited)
+      //Add constants to an additional 2 channels, so the user can see the signal levels at which the DAC output will saturate
+      char buffer[64];
+      sprintf(buffer, "%d,%d,%d,%d,%d,%d,%d,%d", serialdata1, serialdata2 , serialdata3, serialdata4,serialdata5, serialdata6, serialdata7, serialdata8);
+      //Send the output string to Serial
+      Serial.println(buffer);
+      
+      //Clear the serial data string to prepare for the next iteration
+      serialout = "";
+    }else{
+      SerialCommandHandler.Process();
+    }
+}

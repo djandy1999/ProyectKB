@@ -136,9 +136,9 @@ def main():
 
     # Estimate or define your sampling frequency. Adjust if known.
     fs = 1000.0
-    print(raw_data[:,[2]][-1]) 
+     
 
-    notched_data = notch_filter_50Hz(raw_data[:,[2]], fs=fs, quality=30.0)
+    notched_data = notch_filter_50Hz(raw_data, fs=fs, quality=30.0)
     tke_data = teager_kaiser_energy(notched_data)
     filtered_data = moving_average(tke_data, window_size=5)
     #filtered_data = notched_data

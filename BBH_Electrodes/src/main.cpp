@@ -5,8 +5,8 @@
 #include <Wire.h>
 #include "stm32h7xx.h"  // STM32 registers
 
-// Define number of channels to sample (0 through 11)
-#define NUM_CHANNELS 10
+
+#define NUM_CHANNELS 12
 
 const int chipSelectPin = PIN_SPI_SS;
 
@@ -14,12 +14,14 @@ const int chipSelectPin = PIN_SPI_SS;
 volatile int16_t channel_data[NUM_CHANNELS] = { 0 };
 volatile int16_t final_channel_data[NUM_CHANNELS] = { 0 };
 
+
 // Forward declarations of your SPI commands
 uint16_t SendConvertCommand(uint8_t channelnum);
 
 // Create an EventQueue and a Ticker (from Mbed OS)
 events::EventQueue queue(32 * EVENTS_EVENT_SIZE);
 mbed::Ticker sampleTicker;
+
 
 //================================================================
 // Sampling task: Called from the event thread (not in interrupt context)
@@ -31,6 +33,7 @@ void spiSampleTask() {
     }
     // Optionally, you might add filtering here
     for (uint8_t ch = 0; ch < NUM_CHANNELS; ch++) {
+       
         final_channel_data[ch] = channel_data[ch];
     }
 }
@@ -109,15 +112,17 @@ void SetAllAmpPwr() {
     
     // For channels 0-7, set the corresponding bit in register 14.
     for (uint8_t ch = 0; ch < 8; ch++) {
-        previousreg14 |= (1 << ch);
+      SendWriteCommand(14, (1<<ch | previousreg14));
+      previousreg14 |= (1 << ch);
     }
     // For channels 8-11 (since NUM_CHANNELS==12), set the appropriate bits in register 15.
     for (uint8_t ch = 8; ch < NUM_CHANNELS; ch++) {
-        previousreg15 |= (1 << (ch - 8));
+      SendWriteCommand(15, (1<<abs(ch-8) | previousreg15));
+      previousreg15 |= (1 << (ch - 8));
     }
     
-    SendWriteCommand(14, previousreg14);
-    SendWriteCommand(15, previousreg15);
+    //SendWriteCommand(14, previousreg14);
+    //SendWriteCommand(15, previousreg15);
 }
 
 //================================================================
@@ -244,7 +249,7 @@ void setup() {
     Serial.println("Event thread started");
 
     // Set the sampling ticker to trigger at 1/12000 second intervals.
-    sampleTicker.attach(timerCallback, 1.0/10000.0);
+    sampleTicker.attach(timerCallback, 1.0/2000.0);
 }
 
 //================================================================
@@ -257,7 +262,7 @@ void loop() {
             Serial.print(", ");
     }
     Serial.println();
-    delay(1);  // Adjust delay as needed.
+      // add delay as needed.
 }
 
 //================================================================

@@ -6,14 +6,19 @@
 #include "stm32h7xx.h"  // STM32 registers
 
 
-#define NUM_CHANNELS 12
+#define NUM_CHANNELS 6
+int CHANNELS[12] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
 
 const int chipSelectPin = PIN_SPI_SS;
+int serialData = 0;
 
 // Replace 2-channel arrays with 12-channel arrays
 volatile int16_t channel_data[NUM_CHANNELS] = { 0 };
 volatile int16_t final_channel_data[NUM_CHANNELS] = { 0 };
-
+// Buffers for filtering (using float for precision)
+float inBuffer[NUM_CHANNELS][3] = {0};
+float outBuffer[NUM_CHANNELS][3] = {0};
+volatile uint8_t ch = 0;
 
 // Forward declarations of your SPI commands
 uint16_t SendConvertCommand(uint8_t channelnum);
@@ -23,19 +28,52 @@ events::EventQueue queue(32 * EVENTS_EVENT_SIZE);
 mbed::Ticker sampleTicker;
 
 
+void NotchFilter50(uint8_t ch) {
+  // Shift previous inputs
+  inBuffer[ch][0] = inBuffer[ch][1];
+  inBuffer[ch][1] = inBuffer[ch][2];
+  inBuffer[ch][2] = channel_data[ch];
+  
+  // Apply the IIR notch filter equation
+  outBuffer[ch][2] = 0.9696f * inBuffer[ch][0]
+                     - 1.8443f * inBuffer[ch][1]
+                     + 0.9696f * inBuffer[ch][2]
+                     - 0.9391f * outBuffer[ch][0]
+                     + 1.8442f * outBuffer[ch][1];
+  
+  // Shift previous outputs
+  outBuffer[ch][0] = outBuffer[ch][1];
+  outBuffer[ch][1] = outBuffer[ch][2];
+
+  
+  // Write the filtered output to your final data array
+  final_channel_data[ch] = outBuffer[ch][2];
+}
+
+
+void NoNotch(uint8_t ch) {
+  final_channel_data[ch] = channel_data[ch];
+}
+
 //================================================================
 // Sampling task: Called from the event thread (not in interrupt context)
 //================================================================
 void spiSampleTask() {
     // Loop through each channel and sample it.
-    for (uint8_t ch = 0; ch < NUM_CHANNELS; ch++) {
-        channel_data[ch] = SendConvertCommand(ch);
+    
+    channel_data[ch] = SendConvertCommand(CHANNELS[ch]);
+    NotchFilter50(ch);
+    //NoNotch(ch); 
+    if (ch == NUM_CHANNELS - 1) {
+        ch = 0;
+    }else{
+        ch++;
     }
-    // Optionally, you might add filtering here
-    for (uint8_t ch = 0; ch < NUM_CHANNELS; ch++) {
-       
-        final_channel_data[ch] = channel_data[ch];
-    }
+    // // Optionally, you might add filtering here
+    // for (uint8_t ch = 0; ch < NUM_CHANNELS; ch++) {
+    //     final_channel_data[ch] = channel_data[ch];
+    // }
+
 }
 
 //================================================================
@@ -89,7 +127,8 @@ void Calibrate() {
 // Timer callback: posts the sampling task to the event queue.
 //================================================================
 void timerCallback() {
-    queue.call(spiSampleTask);
+  
+  queue.call(spiSampleTask);
 }
 
 //================================================================
@@ -110,17 +149,31 @@ void SetAllAmpPwr() {
     SendReadCommand(15);
     previousreg15 = SendReadCommand(15);
     
-    // For channels 0-7, set the corresponding bit in register 14.
-    for (uint8_t ch = 0; ch < 8; ch++) {
-      SendWriteCommand(14, (1<<ch | previousreg14));
-      previousreg14 |= (1 << ch);
-    }
-    // For channels 8-11 (since NUM_CHANNELS==12), set the appropriate bits in register 15.
-    for (uint8_t ch = 8; ch < NUM_CHANNELS; ch++) {
-      SendWriteCommand(15, (1<<abs(ch-8) | previousreg15));
-      previousreg15 |= (1 << (ch - 8));
-    }
+    // For channels 0-7, set the corresponding bit in register 14.ä
+    int final_channel = CHANNELS[NUM_CHANNELS-1];
+  
+    for (uint8_t ch = 0; ch < NUM_CHANNELS; ch++) {
+      if (CHANNELS[ch]  == final_channel) {
+        if (CHANNELS[ch] < 8) {
+          SendWriteCommand(14, (1<<CHANNELS[ch] | previousreg14));
+
+        }else if (CHANNELS[ch] >= 8){
+          SendWriteCommand(15, (1<<abs(CHANNELS[ch]-8) | previousreg15)); //abs() is not necessary, as the conditional "else if()" ensures FIRSTCHANNEL-8 is positive. However, the compiler gives a warning unless the FIRSTCHANNEL-8 is positive. Hence abs()
+
+        }
+        }else{
+      if (CHANNELS[ch] < 8) {
+        SendWriteCommand(14, (1<<CHANNELS[ch] | previousreg14));
+        previousreg14 = 1 << CHANNELS[ch] | previousreg14;
+      }else if (CHANNELS[ch] >= 8){
+        SendWriteCommand(15, (1<<abs(CHANNELS[ch]-8) | previousreg15)); //abs() is not necessary, as the conditional "else if()" ensures FIRSTCHANNEL-8 is positive. However, the compiler gives a warning unless the FIRSTCHANNEL-8 is positive. Hence abs()
+        previousreg15 = 1 << abs(CHANNELS[ch]-8) | previousreg15;
+      }
+      }
     
+
+    }
+
     //SendWriteCommand(14, previousreg14);
     //SendWriteCommand(15, previousreg15);
 }
@@ -167,11 +220,11 @@ void setupCHIP_Timer() {
 
   // Reset the DSP high-pass filter offset for each channel.
   for (uint8_t ch = 0; ch < NUM_CHANNELS; ch++) {
-      SendConvertCommandH(ch);
+      SendConvertCommandH(CHANNELS[ch] );
   }
   // Send an initial convert command for each channel.
   for (uint8_t ch = 0; ch < NUM_CHANNELS; ch++) {
-      SendConvertCommand(ch);
+      SendConvertCommand(CHANNELS[ch] );
   }
 
   // Optional: initialize I2C interface for DAC or other peripherals.
@@ -242,6 +295,9 @@ void setup() {
     delay(100);
     scanI2C();
     setupCHIP_Timer();
+    pinMode(D5, OUTPUT);
+
+    digitalWrite(D5, HIGH);
 
     // Create thread for the event queue
     static rtos::Thread eventThread(osPriorityHigh, 4096); // 4KB stack
@@ -249,20 +305,23 @@ void setup() {
     Serial.println("Event thread started");
 
     // Set the sampling ticker to trigger at 1/12000 second intervals.
-    sampleTicker.attach(timerCallback, 1.0/2000.0);
+    sampleTicker.attach(timerCallback, std::chrono::microseconds(125));
 }
 
 //================================================================
 // Main loop: print out all channel values.
 //================================================================
 void loop() {
+        // Filter each channel’s data
+
     for (uint8_t ch = 0; ch < NUM_CHANNELS; ch++) {
-        Serial.print(final_channel_data[ch]);
+       serialData = (int)(final_channel_data[ch]*0.195);
+        Serial.print(serialData);
         if (ch < NUM_CHANNELS - 1)
             Serial.print(", ");
     }
-    Serial.println();
-      // add delay as needed.
+    Serial.println(",550,-550");
+    delay(1);  // add delay as needed.
 }
 
 //================================================================

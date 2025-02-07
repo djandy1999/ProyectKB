@@ -129,20 +129,20 @@ def main():
 
     print(f"Raw data shape: {raw_data.shape}")
 
-    # 2) Apply filters in sequence
-    #    a) 50 Hz notch filter
-    #    b) TKE
-    #    c) Moving average
+    # 2. Apply filters in sequence
+    #    
+    #    a. TKE
+    #    b. Moving average
 
     # Estimate or define your sampling frequency. Adjust if known.
     fs = 1000.0
     
-    raw_data = raw_data[:,:-2]
+    raw_data = raw_data[:,1:-2]
 
-    notched_data = notch_filter_50Hz(raw_data, fs=fs, quality=30.0)
     tke_data = teager_kaiser_energy(raw_data)
     filtered_data = moving_average(tke_data, window_size=5)
     #filtered_data = notched_data
+    
     # 3) Animate the data
     fig, ax = plt.subplots()
     print(filtered_data.shape)

@@ -120,7 +120,7 @@ def main():
     # Adjust these parameters as needed
     serial_port = "COM3"
     baud = 250000
-    num_samples = 5000
+    num_samples = 50000
 
     raw_data = read_serial_data(port=serial_port, baudrate=baud, num_samples=num_samples)
     if raw_data.size == 0:
